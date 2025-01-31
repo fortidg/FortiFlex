@@ -1,5 +1,3 @@
-#!C:\\Users\\dgooch\\AppData\\Local\\Programs\\Python\\Python311
- 
 import requests, json, logging
 import os
 
@@ -19,7 +17,7 @@ config_id = os.environ.get('FORTIFLEX_CONFIG_ID')
 
 def requests_post(resource_url, json_body, headers, verify=True):
     """Requests Post"""
-
+    logging.info("--> Post request...")
     logging.info(resource_url)
     logging.info(json_body)
     logging.info(headers)
@@ -37,7 +35,8 @@ def requests_post(resource_url, json_body, headers, verify=True):
     return return_value
 
 def fauth():
-    ####This first section pulls the OAUTH token from fortinet
+    """This first section pulls the OAUTH token from fortinet"""
+    logging.info("--> Get FortiFlex OAUTH token...")
     fauth_url = "https://customerapiauth.fortinet.com/api/v1/oauth/token/"
     headers = {'Content-Type' : 'application/json; charset=utf-8'}
     body = {
@@ -54,7 +53,7 @@ def fauth():
         url=fauth_url,
         headers=headers,
         json=body,
-        # verify=False
+        timeout=20,
         )
         jsonresponse = response.json()
 
@@ -93,10 +92,10 @@ def get_active(access_token, config_id):
 
     else:
         print("No results found.")
-  
-def stop_token(access_token):
+
+def stop_entitlements(access_token):
     """Stop FortiFlex entitlements which are active and unassigned."""
-    logging.info("--> Retrieve FortiFlex Entitlements...")
+    logging.info("--> Stop entitlements...")
     serials = get_active(access_token, config_id)
 
 
@@ -107,7 +106,7 @@ def stop_token(access_token):
 
     if serials == []:
         print("No active entitlements found.")
-        return 
+        return
     else:
         for serial in serials:
             body = {"serialNumber": serial}
@@ -119,4 +118,4 @@ def stop_token(access_token):
 
 
 
-stop_token(fauth())
+stop_entitlements(fauth())
