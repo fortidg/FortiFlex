@@ -1,10 +1,6 @@
 import requests, json, logging
 import os
 
-##added these lines to prevent the warning for insecure request
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 FORTIFLEX_API_BASE_URI = "https://support.fortinet.com/ES/api/fortiflex/v2/"
 FORTICARE_AUTH_URI = "https://customerapiauth.fortinet.com/api/v1/oauth/token/"
