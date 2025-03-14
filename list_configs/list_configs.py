@@ -9,8 +9,7 @@ COMMON_HEADERS = {"Content-type": "application/json", "Accept": "application/jso
 
 username = os.environ.get('FORTICARE_USERNAME')
 password = os.environ.get('FORTICARE_PASSWORD')
-config_id = os.environ.get('FORTIFLEX_CONFIG_ID')
-
+prog_ser = os.environ.get('FORTIFLEX_SERIAL_NUMBER')
 
 def requests_post(resource_url, json_body, headers, verify=True):
     """Requests Post"""
@@ -57,60 +56,36 @@ def fauth():
         print(f'Other error occurred: {err}')
 
     ##This code assigns a variable to the access_token dictionary
+    print(jsonresponse)
     token = jsonresponse['access_token']
 
     return token
 
 
-
-def get_active(access_token, config_id):
-    """Retrieve FortiFlex configurattions"""
+### This section will use the token to get the FortiFlex configurations
+def get_config(access_token):
+    """Retrieve FortiFlex configurations which are active and unassigned."""
     logging.info("--> Retrieve FortiFlex Entitlements...")
 
-    uri = FORTIFLEX_API_BASE_URI + "entitlements/list"
+    uri = FORTIFLEX_API_BASE_URI + "configs/list"
     headers = COMMON_HEADERS.copy()
     headers["Authorization"] = f"Bearer {access_token}"
 
-    body = {"configId": config_id}
+    body = {"programSerialNumber": prog_ser}
 
     results = requests_post(uri, body, headers)
 
 
     if results:
-        entitlements_list = results["entitlements"]
-        serial_numbers = []
-        for entitlement in entitlements_list:
-            if entitlement['status'] == 'ACTIVE' and entitlement['description'] == '':
-                serial_numbers.append(entitlement['serialNumber'])
-        print(serial_numbers)
-        return serial_numbers
+        config_list = results["configs"]
+        print(config_list)
+        return config_list
 
     else:
         print("No results found.")
 
-def stop_entitlements(access_token):
-    """Stop FortiFlex entitlements which are active and unassigned."""
-    logging.info("--> Stop entitlements...")
-    serials = get_active(access_token, config_id)
-
-
-
-    uri = FORTIFLEX_API_BASE_URI + "entitlements/stop"
-    headers = COMMON_HEADERS.copy()
-    headers["Authorization"] = f"Bearer {access_token}"
-
-    if serials == []:
-        print("No active entitlements found.")
-        return
-    else:
-        for serial in serials:
-            body = {"serialNumber": serial}
-            print (serial)
-            results = requests_post(uri, body, headers)
-            print(results)
-        return results
 
 
 
 
-stop_entitlements(fauth())
+get_config(fauth())
