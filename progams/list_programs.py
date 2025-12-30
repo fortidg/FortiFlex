@@ -1,0 +1,89 @@
+import requests, json, logging
+import os
+
+
+FORTIFLEX_API_BASE_URI = "https://support.fortinet.com/ES/api/fortiflex/v2/"
+FORTICARE_AUTH_URI = "https://customerapiauth.fortinet.com/api/v1/oauth/token/"
+
+COMMON_HEADERS = {"Content-type": "application/json", "Accept": "application/json"}
+
+username = os.environ.get('FORTICARE_USERNAME')
+password = os.environ.get('FORTICARE_PASSWORD')
+prog_ser = os.environ.get('FORTIFLEX_SERIAL_NUMBER')
+
+def requests_post(resource_url, json_body, headers, verify=True):
+    """Requests Post"""
+    logging.info("--> Post request...")
+    logging.info(resource_url)
+    logging.info(json_body)
+    logging.info(headers)
+
+    result = requests.post(resource_url, json=json_body, headers=headers, timeout=20, verify=verify)
+
+    if result.ok:
+        logging.info(result.content)
+        return_value = json.loads(result.content)
+    else:
+        logging.info(result)
+        return_value = None
+
+    logging.info(result.content)
+    return return_value
+
+def fauth():
+    """This first section pulls the OAUTH token from fortinet"""
+    logging.info("--> Get FortiFlex OAUTH token...")
+    fauth_url = "https://customerapiauth.fortinet.com/api/v1/oauth/token/"
+    headers = {'Content-Type' : 'application/json; charset=utf-8'}
+    body = {
+        "username": username,
+        "password": password,
+        "client_id": "flexvm",
+        "grant_type": "password"
+    } 
+
+    try: 
+        response = requests.post(
+        url=fauth_url,
+        headers=headers,
+        json=body,
+        timeout=20,
+        )
+        jsonresponse = response.json()
+
+
+    except Exception as err:
+        print(f'Other error occurred: {err}')
+
+    ##This code assigns a variable to the access_token dictionary
+    print(jsonresponse)
+    token = jsonresponse['access_token']
+
+    return token
+
+
+### This section will use the token to get the FortiFlex configurations
+def get_programs(access_token):
+    """Retrieve FortiFlex configurations which are active and unassigned."""
+    logging.info("--> Retrieve FortiFlex Entitlements...")
+
+    uri = FORTIFLEX_API_BASE_URI + "programs/list"
+    headers = COMMON_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {access_token}"
+
+    body = {}
+
+    results = requests_post(uri, body, headers)
+    if results:
+        programs_list = results["programs"]
+        print(programs_list)
+        return programs_list
+
+    else:
+        print("No results found.")
+
+
+
+
+
+get_programs(fauth())
